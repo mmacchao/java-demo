@@ -2,8 +2,14 @@ package com.example.controller;
 
 import com.example.bean.ApiResponse;
 import com.example.bean.LoginRequest;
+import com.example.mapper.UserMapper;
+import com.example.model.User;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
+import org.apache.ibatis.io.Resources;
+import org.apache.ibatis.session.SqlSession;
+import org.apache.ibatis.session.SqlSessionFactory;
+import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -11,6 +17,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.sql.*;
 import java.util.HashMap;
@@ -36,7 +43,7 @@ public class Login extends HttpServlet {
                 String jsonBody = readRequestBody(request);
 
                 // 2. 将JSON解析为Java对象
-                LoginRequest loginRequest = gson.fromJson(jsonBody, LoginRequest.class);
+                User loginRequest = gson.fromJson(jsonBody, User.class);
                 String password = loginRequest.getPassword();
 
                 // 3. 校验必要参数是否存在
@@ -44,7 +51,7 @@ public class Login extends HttpServlet {
                     apiResponse = new ApiResponse(400, "用户名和密码不能为空", null);
                     response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 } else {
-                    // 3. 查询数据库
+                   /* // 3. 查询数据库
                     String sql = "SELECT * FROM user WHERE username = ?";
                     try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                         stmt.setString(1, loginRequest.getUsername());
@@ -75,7 +82,34 @@ public class Login extends HttpServlet {
                                 apiResponse = new ApiResponse(200, "注册成功", data);
                             }
                         }
+                    }*/
+
+                    // 初始化 SqlSessionFactory
+                    String resource = "mybatis-config.xml";
+                    InputStream inputStream = Resources.getResourceAsStream(resource);
+                    SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
+
+                    // 执行 SQL
+                    try (SqlSession session = sqlSessionFactory.openSession()) {
+                        UserMapper mapper = session.getMapper(UserMapper.class);
+                        User user = mapper.selectUserByName(loginRequest.getUsername());
+                        if (user != null) {
+                            if (user.getPassword().equals(loginRequest.getPassword())) {
+                                apiResponse = new ApiResponse(200, "欢迎回来", null);
+                            } else {
+                                apiResponse = new ApiResponse(400, "密码错误", null);
+                            }
+                        } else {
+                            // 插入用户
+                            int id = mapper.insertUser(loginRequest);
+                            session.commit();
+                            session.close();
+                            HashMap data = new HashMap();
+                            data.put("id", id);
+                            apiResponse = new ApiResponse(200, "注册成功", data);
+                        }
                     }
+
                     response.setStatus(HttpServletResponse.SC_OK);
                 }
             } catch (JsonSyntaxException e) {
