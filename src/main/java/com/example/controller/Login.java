@@ -10,6 +10,7 @@ import org.apache.ibatis.io.Resources;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -36,6 +37,9 @@ public class Login {
     private static final String DB_USER = "root";
     private static final String DB_PASSWORD = "123456";
 
+    @Autowired
+    private UserMapper mapper; // MyBatis Mapper 接口
+
     @PostMapping("/login")
     @ResponseBody
     public ResponseEntity<ApiResponse> doPost(@RequestBody User loginRequest)
@@ -45,30 +49,26 @@ public class Login {
             apiResponse = new ApiResponse(400, "用户名和密码不能为空", null);
         } else {
             // 初始化 SqlSessionFactory
-            String resource = "mybatis-config.xml";
-            InputStream inputStream = Resources.getResourceAsStream(resource);
-            SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
+//            String resource = "mybatis-config.xml";
+//            InputStream inputStream = Resources.getResourceAsStream(resource);
+//            SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
 
             // 执行 SQL
-            try (SqlSession session = sqlSessionFactory.openSession()) {
-                UserMapper mapper = session.getMapper(UserMapper.class);
-                User user = mapper.selectUserByName(loginRequest.getUsername());
-                if (user != null) {
-                    if (user.getPassword().equals(loginRequest.getPassword())) {
-                        apiResponse = new ApiResponse(200, "欢迎回来", null);
-                    } else {
-                        apiResponse = new ApiResponse(400, "密码错误", null);
-                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiResponse);
-                    }
+//                UserMapper mapper = session.getMapper(UserMapper.class);
+            User user = mapper.selectUserByName(loginRequest.getUsername());
+            if (user != null) {
+                if (user.getPassword().equals(loginRequest.getPassword())) {
+                    apiResponse = new ApiResponse(200, "欢迎回来", null);
                 } else {
-                    // 插入用户
-                    int id = mapper.insertUser(loginRequest);
-                    session.commit();
-                    session.close();
-                    HashMap data = new HashMap();
-                    data.put("id", id);
-                    apiResponse = new ApiResponse(200, "注册成功", data);
+                    apiResponse = new ApiResponse(400, "密码错误", null);
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiResponse);
                 }
+            } else {
+                // 插入用户
+                int id = mapper.insertUser(loginRequest);
+                HashMap data = new HashMap();
+                data.put("id", id);
+                apiResponse = new ApiResponse(200, "注册成功", data);
             }
         }
         return ResponseEntity.ok(apiResponse);
