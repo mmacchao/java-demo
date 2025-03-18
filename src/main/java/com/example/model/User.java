@@ -1,5 +1,8 @@
 package com.example.model;
 
+import com.baomidou.mybatisplus.annotation.TableName;
+
+@TableName("user")  // 指定表名（若表名与类名不一致时必加）
 public class User {
     public Integer getId() {
         return id;

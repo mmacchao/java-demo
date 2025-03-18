@@ -7,11 +7,19 @@ spring:
 
 
 # MyBatis 配置（若整合 MyBatis）
-mybatis:
-  mapper-locations: classpath:mapper/*.xml
-  type-aliases-package: com.example.model
+#mybatis:
+#  mapper-locations: classpath:mapper/*.xml
+#  type-aliases-package: com.example.model
+#  configuration:
+#    map-underscore-to-camel-case: true          # 字段下划线转驼峰
+
+
+# MyBatis-Plus 新配置
+mybatis-plus:
+  mapper-locations: classpath*:mapper/*Mapper.xml  # 支持多级目录
+  type-aliases-package: com.example.model  # 实体类包路径
   configuration:
-    map-underscore-to-camel-case: true          # 字段下划线转驼峰
+    map-underscore-to-camel-case: true  # 下划线转驼峰[1,6](@ref)
 
 server:
   port: 8088

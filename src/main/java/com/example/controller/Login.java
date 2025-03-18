@@ -55,6 +55,8 @@ public class Login {
 
             // 执行 SQL
 //                UserMapper mapper = session.getMapper(UserMapper.class);
+            User tempUser = mapper.selectById(12);
+            System.out.print(tempUser);
             User user = mapper.selectUserByName(loginRequest.getUsername());
             if (user != null) {
                 if (user.getPassword().equals(loginRequest.getPassword())) {
